@@ -87,7 +87,7 @@ export default function TeamDetails() {
                 style={styles.input}
                 value={editedTeam.name}
                 onChangeText={(text) => setEditedTeam(prev => ({ ...prev, name: text }))}
-                placeholder="Nombre del planeta"
+                placeholder="Nombre del Equipo"
               />
               <TextInput
                 style={styles.input}
