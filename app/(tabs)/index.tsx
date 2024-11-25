@@ -1,74 +1,168 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, ScrollView, Dimensions, View, Text, SafeAreaView, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Pressable } from "react-native";
+import { useRouter } from "expo-router";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const { width, height } = Dimensions.get("window");
 
 export default function HomeScreen() {
+  const [teams, setTeams] = useState([]);
+  const router = useRouter();
+
+  const handleFetchFeed = async () => {
+    try {
+      const teamsFetch = await fetch("http://161.35.143.238:8000/ffilardi");
+      const teams = await teamsFetch.json();
+      return teams;
+    } catch (error) {
+      console.error("Error fetching planets:", error);
+      return [];
+    }
+  };
+
+  const handleDeleteTeam = async (id: any) => {
+    try {
+      const response = await fetch(`http://161.35.143.238:8000/ffilardi/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setTeams(teams.filter((team) => team.id !== id));
+        alert("Team deleted successfully!");
+      } else {
+        alert("Failed to delete team.");
+      }
+    } catch (error) {
+      console.error("Error deleting team:", error);
+      alert("An error occurred while deleting the team.");
+    }
+  };
+
+
+  useEffect(() => {
+    handleFetchFeed().then((teams) => {
+      setTeams(teams);
+    });
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContainer}
+    >
+      <SafeAreaView>
+        <ThemedView style={styles.container}>
+          {/* Header del título */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Eliminatorias Sudamericanas</Text>
+          </View>
+
+          {/* Lista de planetas */}
+          {teams.map((team: any) => (
+            <ThemedView key={team.id} style={styles.card}>
+              <Pressable
+                onPress={() => {
+                  router.push({
+                    pathname: "./../detalles",
+                    params: { teamId: team.id },
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.button,
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
+              >
+                <View style={styles.cardContent}>
+                  {/* Imagen del planeta */}
+                  <Image source={{ uri: team.image }} />
+
+                  {/* Nombre del planeta */}
+                  <ThemedText type="subtitle">{team.name}</ThemedText>
+                  <Pressable
+                    onPress={() => handleDeleteTeam(team.id)}
+                    style={({ pressed }) => [
+                      styles.deleteButton,
+                      { opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <Text style={styles.deleteButtonText}>Eliminar</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </ThemedView>
+          ))}
+
+        </ThemedView>
+      </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  button: {
+    padding: 10,
+    width: "100%",
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  image: {
+    width: width * 0.9,
+    height: height * 0.3,
+    resizeMode: "cover",
+    borderRadius: width * 0.03,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  scrollContainer: {
+    flexGrow: 1,
+    minHeight: height,
   },
+  container: {
+    padding: width * 0.05,
+    gap: width * 0.05,
+    width: width,
+    minHeight: height,
+  },
+  header: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: height * 0.03,
+  },
+  title: {
+    fontSize: width * 0.08,
+    fontWeight: "bold",
+    color: "#1D3D47",
+    textAlign: "center",
+  },
+  card: {
+    padding: width * 0.05,
+    borderRadius: width * 0.03,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    marginBottom: height * 0.02,
+    width: width * 0.92,
+    alignSelf: "center",
+  },
+  cardContent: {
+    flexDirection: "row", // Alinea la imagen y el texto horizontalmente
+    alignItems: "center",
+  },
+  deleteButton: {
+    backgroundColor: "#ff4d4d",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+  }
 });
